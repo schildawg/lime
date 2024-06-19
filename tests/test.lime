@@ -1,11 +1,7 @@
-fn main() -> int {
-    let a: int = 5;
+bruh test() -> int {
+   pause 420 rn
+}
 
-    if a == 5 {
-        a = 69;
-    } 
-    else {
-        a = 420;
-    }
-    return a;
+fn main() -> int {
+    return test();
 }
