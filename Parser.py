@@ -7,6 +7,7 @@ from AST import Statement, Expression, Program
 from AST import ExpressionStatement, LetStatement, FunctionStatement, ReturnStatement, BlockStatement, AssignStatement, IfStatement
 from AST import InfixExpression, CallExpression
 from AST import IntegerLiteral, FloatLiteral, IdentifierLiteral, BooleanLiteral
+from AST import FunctionParameter
 
 # Precedence Types
 class PrecedenceType(Enum):
@@ -192,10 +193,7 @@ class Parser:
         if not self.__expect_peek(TokenType.LPAREN):
             return None
         
-        stmt.parameters = [] # TODO
-
-        if not self.__expect_peek(TokenType.RPAREN):
-            return None
+        stmt.parameters = self.__parse_function_parameters()
 
         if not self.__expect_peek(TokenType.ARROW):
             return None
@@ -212,6 +210,41 @@ class Parser:
 
         return stmt
         
+
+    def __parse_function_parameters(self) -> list[FunctionParameter]:
+        params: list[FunctionParameter] = []
+
+        if self.__peek_token_is(TokenType.RPAREN):
+            self.__next_token()
+            return params
+
+        self.__next_token()
+
+        first_param: FunctionParameter = FunctionParameter(name=self.current_token.literal)
+        if not self.__expect_peek(TokenType.COLON):
+            return None
+        
+        self.__next_token()
+
+        first_param.value_type = self.current_token.literal
+        params.append(first_param)
+
+        while self.__peek_token_is(TokenType.COMMA):
+            self.__next_token()
+            self.__next_token()
+
+            param: FunctionParameter = FunctionParameter(name=self.current_token.literal)
+            if not self.__expect_peek(TokenType.COLON):
+                return None
+
+            self.__next_token()
+            param.value_type = self.current_token.literal         
+            params.append(param)
+
+        if not self.__expect_peek(TokenType.RPAREN):
+            return None       
+
+        return params
 
     def __parse_return_statement(self) -> ReturnStatement:
         stmt: ReturnStatement = ReturnStatement()
@@ -322,13 +355,30 @@ class Parser:
 
     def __parse_call_expression(self, function: Expression) -> None:
         expr: CallExpression = CallExpression(function=function)
-        expr.arguments = [] # TODO
-        if not self.__expect_peek(TokenType.RPAREN):
-            return None
+        expr.arguments = self.__parse_expression_list(TokenType.RPAREN)
         
         return expr
 
+    def __parse_expression_list(self, end: TokenType) -> list[Expression]:
+        e_list: list[Expression] = []
 
+        if self.__peek_token_is(end):
+            self.__next_token()
+            return e_list
+        
+        self.__next_token()
+        e_list.append(self.__parse_expression(PrecedenceType.P_LOWEST))
+
+        while self.__peek_token_is(TokenType.COMMA):
+            self.__next_token()            
+            self.__next_token()
+            
+            e_list.append(self.__parse_expression(PrecedenceType.P_LOWEST))          
+
+        if not self.__expect_peek(end):
+            return None
+
+        return e_list
     # endregion
 
     # region Prefix Methods

@@ -1,7 +1,7 @@
-bruh test() -> int {
-   pause 420 rn
+fn add(a: int, b: int) -> int {
+   return b + a;
 }
 
 fn main() -> int {
-    return test();
+    return add(1, 2);
 }
