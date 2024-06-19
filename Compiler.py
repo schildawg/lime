@@ -1,7 +1,7 @@
 from llvmlite import ir
 
 from AST import Node, NodeType, Program, Expression, Statement
-from AST import ExpressionStatement, LetStatement, BlockStatement, FunctionStatement, ReturnStatement 
+from AST import ExpressionStatement, LetStatement, BlockStatement, FunctionStatement, ReturnStatement, AssignStatement
 from AST import InfixExpression
 from AST import IntegerLiteral, FloatLiteral, IdentifierLiteral
 
@@ -17,6 +17,8 @@ class Compiler:
         self.module: ir.Module = ir.Module('main')
         self.builder: ir.IRBuilder = ir.IRBuilder()
         self.env : Environment = Environment()
+
+        self.errors: list[str] = []
 
     def compile(self, node: Node) -> None:
         match node.type():
@@ -34,7 +36,8 @@ class Compiler:
                 self.__visit_block_statement(node)
             case NodeType.ReturnStatement:
                 self.__visit_return_statement(node)
-
+            case NodeType.AssignStatement:
+                self.__visit_assign_statement(node)
             case NodeType.InfixExpression:
                 self.__visit_infix_expression(node)
             
@@ -110,6 +113,19 @@ class Compiler:
         self.env.define(name, func, return_type)
 
         self.builder = previous_builder
+
+    def __visit_assign_statement(self, node: AssignStatement) -> None:
+        name: str = node.ident.value
+        value: Expression = node.right_value
+
+        value, Type = self.__resolve_value(value)
+        
+        if self.env.lookup(name) is None:
+            self.errors.append(f"COMPILE ERROR: Identifier {name} has not been declared before it was re-assigned")
+        else:
+            ptr, _ = self.env.lookup(name)
+            self.builder.store(value, ptr)
+
     # endregion
 
     # region Expressions

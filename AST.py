@@ -10,6 +10,7 @@ class NodeType(Enum):
     FunctionStatement = "FunctionStatement"
     BlockStatement = "BlockStatement"
     ReturnStatement = "ReturnStatement"
+    AssignStatement = "AssignStatement"
 
     # Expressions
     InfixExpression = "InfixExpression"
@@ -121,6 +122,21 @@ class FunctionStatement(Statement):
             "return_type": self.return_type,
             "parameters": [p.json() for p in self.parameters],
             "body": self.body.json()
+        }
+
+class AssignStatement(Statement):
+    def __init__(self, ident: Expression = None, right_value: Expression = None) -> None:
+        self.ident = ident
+        self.right_value = right_value
+
+    def type(self) -> NodeType:
+        return NodeType.AssignStatement
+    
+    def json(self) -> dict:
+        return {
+            "type": self.type().value,
+            "ident": self.ident.json(),
+            "right_value": self.right_value.json(),
         }
 
 # endregion
